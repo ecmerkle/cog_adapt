@@ -5,22 +5,14 @@ library("bayesplot")
 
 ## load results run outside this document:
 library(targets)
-bounds <- TRUE
 
 tar_load(median_times)
 sclabs <- median_times$sclabs
 median_times <- median_times$tms
 tar_load(fcast_scores)
 tar_load(postmns)
-if (bounds) {
-  tar_load(data)
-  tar_load(summaries)
-} else {
-  tar_load(data_nb)
-  tar_load(summaries_nb)
-  data <- data_nb
-  summaries <- summaries_nb
-}
+tar_load(data)
+tar_load(summaries)
 data <- data$data
 
 tar_load(postmns2)
