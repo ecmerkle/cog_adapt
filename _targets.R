@@ -30,11 +30,6 @@ list(
     # Do not run on a parallel worker:
     deployment = "main"
   ),
-  tar_target(
-    model_nb,
-    compile_model("stan/betairt_nobounds.stan"),
-    deployment = "main"
-  ),
   ## data and models for pilot study 1
   tar_target(
     median_times,
@@ -65,23 +60,6 @@ list(
     summaries,
     summ_outputs(data$data, fit, theta_values, postmns, model_type = "beta")
   ),
-  ## tar_target(
-  ##   data_nb,
-  ##   read_data(bounds = FALSE),
-  ##   deployment = "main"
-  ## ),
-  ## tar_target(
-  ##   fit_nb,
-  ##   fit_model(data_nb, model_nb, model_type = "beta_nobound")
-  ## ),
-  ## tar_target(
-  ##   postmns_nb,
-  ##   summ_params(fit_nb)
-  ## ),
-  ## tar_target(
-  ##   summaries_nb,
-  ##   summ_outputs(data_nb, fit_nb, theta_values, postmns_nb, model_type = "beta_nobound")
-  ## ),
   ## data and models from main study 2
   tar_target(
     data2,
@@ -112,45 +90,5 @@ list(
   tar_target(
     adapt_test_time,
     adapt12(data$data, data2, postmns2, median_times, use_times = TRUE)
-  ),
-  tar_target(
-    adapt_test2,
-    adapt12(data2$dat, data2, postmns2, median_times, use_times = FALSE)
-  ),
-  tar_target(
-    adapt_test_time2,
-    adapt12(data2$dat, data2, postmns2, median_times, use_times = TRUE)
-  ),
-  tar_target(
-    data3,
-    read_data3(data2$dat)
-  ),
-  tar_target(
-    fit3,
-    fit_model(data3, model_file, model_type = "beta")
-  ),
-  tar_target(
-    postmns3,
-    summ_params(fit3)
-  ),
-  tar_target(
-    summaries3,
-    summ_outputs(data3, fit3, theta_values, postmns3, model_type = "beta")
-  ),
-  tar_target(
-    mtimes3,
-    read_times3(data3)
-  ),
-  tar_target(
-    adapt_test3,
-    adapt12(data3, data3, postmns3, mtimes3, use_times = FALSE)
   )
-  #tar_render(report, "writeup.Rmd"),
-  #tar_force(
-  #  manuscript,
-  #  system('knit2pdf ms.Rnw'),
-  #  force = 1 > 0, priority = 0
-  #)
-  #tar_render(prereg, "prereg.Rmd")
-  #tar_render(pres, "slides.Rmd")
 )
