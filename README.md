@@ -11,7 +11,9 @@ git clone git@github.com:ecmerkle/cog_adapt.git
 This step will vary depending on how git is set up on your computer.
 
 
-2. In the resulting cog_adapt folder, open R and run `source("compile.R")`
+2. In the resulting cog_adapt folder, open R and run `source("pkgcheck.R")` to ensure that the necessary R packages are installed.
 
-Step 2 will take a long time because it is running multiple Bayesian models. To run individual models or parts of the analysis, see the individual targets inside `_targets.R`. And code for figures and summaries are included in the file `summaries_figures.R`.
+3. While still in R, run `source("compile.R")`
+
+Step 3 will take a long time because it is running multiple Bayesian models. To run individual models or parts of the analysis, see the individual targets inside `_targets.R`. And code for figures and summaries are included in the file `summaries_figures.R`.
 
