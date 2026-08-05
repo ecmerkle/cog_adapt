@@ -1,5 +1,7 @@
 ## Code for *Identifying good forecasters via adaptive cognitive tests*
-This repo contains the code and analyses used in the paper. The data are contained in a [separate repo for the main project.](https://github.com/forecastingresearch/fpt) To obtain the data and run the paper scripts, follow the instructions below.
+This repo contains the code and analyses used in the paper. The data are contained in a [separate repo for the main project.](https://github.com/forecastingresearch/fpt) 
+
+To obtain the data and run the paper scripts, open `replication_code.R` and follow the instructions. An overview appears below.
 
 1. Clone this repo and the data repo inside the same top-level folder. On many systems, you could open the terminal, go to the folder that should contain the repos, then issue the following commands:
 
@@ -15,5 +17,7 @@ This step will vary depending on how git is set up on your computer.
 
 3. While still in R, run `source("compile.R")`
 
-Step 3 will take a long time because it is running multiple Bayesian models. To run individual models or parts of the analysis, see the individual targets inside `_targets.R`. And code for figures and summaries are included in the file `summaries_figures.R`.
+Step 3 will take a long time because it is running multiple Bayesian models. To run individual models or parts of the analysis, see the individual targets inside `_targets.R`.
+
+4. Once Step 3 completes, figures and other results from the paper can be obtained from the code in `replication_code.R`.
 
