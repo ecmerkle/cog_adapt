@@ -30,17 +30,6 @@ list(
     # Do not run on a parallel worker:
     deployment = "main"
   ),
-  tar_target(
-    model_nb,
-    compile_model("stan/betairt_nobounds.stan"),
-    deployment = "main"
-  ),
-  ## "1 parameter" (no discrimination) irt model
-  tar_target(
-    model_1p,
-    compile_model("stan/betairt_1p.stan"),
-    deployment = "main"
-  ),
   ## 2-group model for intervals of parameter differences
   tar_target(
     model_2grp,
@@ -77,23 +66,6 @@ list(
     summaries,
     summ_outputs(data$data, fit, theta_values, postmns, model_type = "beta")
   ),
-  ## tar_target(
-  ##   data_nb,
-  ##   read_data(bounds = FALSE),
-  ##   deployment = "main"
-  ## ),
-  ## tar_target(
-  ##   fit_nb,
-  ##   fit_model(data_nb, model_nb, model_type = "beta_nobound")
-  ## ),
-  ## tar_target(
-  ##   postmns_nb,
-  ##   summ_params(fit_nb)
-  ## ),
-  ## tar_target(
-  ##   summaries_nb,
-  ##   summ_outputs(data_nb, fit_nb, theta_values, postmns_nb, model_type = "beta_nobound")
-  ## ),
   ## data and models from main study 2
   tar_target(
     data2,
@@ -166,18 +138,6 @@ list(
     adapt12(data3, data3, postmns3, mtimes3, use_times = TRUE)
   ),
   tar_target(
-    fit1p,
-    fit_model(data2$dat, model_1p, model_type = "beta")
-  ),
-  tar_target(
-    postmns1p,
-    summ_params(fit1p)
-  ),
-  tar_target(
-    summ1p,
-    summ_outputs(data2$dat, fit1p, theta_values, postmns1p, model_type = "beta")
-  ),
-  tar_target(
     fit2grp,
     fit_2grp_model(data$dat, data2$dat, model_2grp)
   ),
@@ -189,12 +149,4 @@ list(
     aggres,
     do_agg(data, fcasts, adapt_test_time)
   )
-  #tar_render(report, "writeup.Rmd"),
-  #tar_force(
-  #  manuscript,
-  #  system('knit2pdf ms.Rnw'),
-  #  force = 1 > 0, priority = 0
-  #)
-  #tar_render(prereg, "prereg.Rmd")
-  #tar_render(pres, "slides.Rmd")
 )
