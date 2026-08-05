@@ -126,18 +126,6 @@ list(
     summ_outputs(data3, fit3, theta_values, postmns3, model_type = "beta")
   ),
   tar_target(
-    mtimes3,
-    read_times3(data3)
-  ),
-  tar_target(
-    adapt_test3,
-    adapt12(data3, data3, postmns3, mtimes3, use_times = FALSE)
-  ),
-  tar_target(
-    adapt_test_time3,
-    adapt12(data3, data3, postmns3, mtimes3, use_times = TRUE)
-  ),
-  tar_target(
     fit2grp,
     fit_2grp_model(data$dat, data2$dat, model_2grp)
   ),
