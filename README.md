@@ -15,9 +15,7 @@ This step will vary depending on how git is set up on your computer.
 
 2. In the resulting cog_adapt folder, open R and run `source("pkgcheck.R")` to ensure that the necessary R packages are installed.
 
-3. While still in R, run `source("compile.R")`
-
-Step 3 will take a long time because it is running multiple Bayesian models. To run individual models or parts of the analysis, see the individual targets inside `_targets.R`.
+3. While still in R, run `source("compile.R")`. This step will take a long time because it is running multiple Bayesian models. To run individual models or parts of the analysis, see the individual targets inside `_targets.R`.
 
 4. Once Step 3 completes, figures and other results from the paper can be obtained from the code in `replication_code.R`.
 
