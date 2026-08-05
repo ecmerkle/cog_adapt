@@ -98,7 +98,7 @@ read_data3 <- function(data2) {
   
   
 
-read_times <- function() {
+read_times <- function(data) {
   ## return median times for now, could change later
   ## pcorrGK + calGK are unknown, so use pcorrIQ for now
   tms <- c(leap = 7.92, denomA = 3.95, denomB = 3.17, graph = 3.99, pcorrGK = 5.38, pcorrIQ = 5.38, calGK = 5.38,
@@ -107,21 +107,27 @@ read_times <- function() {
            ## these come from datasets_to_save$median_completion_times:
            ADMC_res = 8.06, ADMC_risk = 2.09, ADMC_dec = 5.30)
 
-  sclabs <- c("leap", "denomA", "denomB", "graph", "pcorrGK", "pcorrIQ", "calGK", "time_ser",
-              "bayes_easy", "bayes_hard", "cog_refl", "berlin", "num_ser", "cfs", "raven",
-              "ship_voc", "ship_abs", "ADMC_res", "ADMC_risk", "ADMC_dec")
+  names(tms) <- sclabs <- colnames(data)
   names(sclabs) <- 1:20
 
   list(tms = tms, sclabs = sclabs)
 }
 
 read_times3 <- function(data3) {
-  ## placeholder to make adaptive testing functions happy
-  tms <- rep(1, ncol(data3))
-  names(tms) <- colnames(data3)
+  ## get times from cognitive tests, then add the forecasting times
+  tms <- read_times(data3[,1:20])
+  ftimes <- read.csv("data/item rt descriptives.csv")
 
-  sclabs <- colnames(data3)
-  names(sclabs) <- 1:ncol(data3)
+  ftimes <- ftimes[match(colnames(data3)[21:ncol(data3)], ftimes$item),]
+  newnames <- colnames(data3)
+
+  tms <- c(tms$tms, ftimes$median)
+  ## 6 forecasting items are missing time taken, so use median across other forecasting items:
+  tms[is.na(tms)] <- median(ftimes$median, na.rm = TRUE)
+  names(tms) <- newnames
+  
+  sclabs <- names(tms)
+  names(sclabs) <- 1:length(sclabs)
 
   list(tms = tms, sclabs = sclabs)
 }
@@ -165,6 +171,26 @@ fit_model <- function(scdat, model, model_type = "beta") {
 
   fit
 }
+
+fit_2grp_model <- function(scdat1, scdat2, model) {
+  scdat <- rbind(scdat1, scdat2)
+  N <- nrow(scdat)
+  nit <- ncol(scdat)
+  grp <- rep(1:2, c(nrow(scdat1), nrow(scdat2)))
+
+  ini <- list(icept = array(0, dim = c(2, nit)), ln_sigma2 = array(0, dim = c(2, nit)),
+              ln_phi = array(0, dim = c(2, nit)), tau = array(0, dim = N),
+              b0 = array(-2, dim = c(2, nit)), b1 = array(2, dim = c(2, nit)))
+  ini <- list(c1 = ini, c2 = ini, c3 = ini)
+  
+  mons <- c("icept", "phi", "ln_sigma2", "b0", "b1")
+  mons <- c(mons, paste0(mons, "_diff"))
+  standata<- list(N = N, nit = nit, z = scdat, grp = grp)
+
+  fit <- sampling(model, data = standata, iter = 2000, chains = 3, init = ini, pars = mons)
+
+  fit
+} 
 
 summ_params <- function(fit) {
   ## obtain posterior means of model parameters
@@ -260,4 +286,97 @@ score_study2 <- function(dat2, dat1, postmns) {
   }
 
   ovsc
+}
+
+read_forecasts <- function() {
+  ## read study 1 forecasts for aggregation section
+  fdat <- read.csv("../fpt/data_pilot_forecasting/processed_data/pilot scores.csv")
+
+  ## analyses of scores on overlapping questions vs across all questions
+  ## tmpdat <- fdat[fdat$item %in% c('G1472', 'G1588', 'G1920', 'M3028', 'M3701', 'M5839'),]
+  ## olscore <- with(tmpdat, tapply(sscore_standardized, subject_id, mean, na.rm = TRUE))
+  ## fullscore <- with(fdat, tapply(sscore_standardized, subject_id, mean, na.rm = TRUE))
+  ## fullscore <- fullscore[names(fullscore) %in% names(olscore)]
+  ## cor(olscore, fullscore) # .89
+  ## plot(olscore, fullscore)
+  
+  fdat
+}
+
+## aggregations using results of adaptive test
+do_agg <- function(data, fcasts, adapt_test, pctkeep = .4) {
+  pilotsubs <- data$pilotsubs
+  data <- data$data
+  compdat <- which(apply(data == -999, 1, sum) == 0)
+  subids <- pilotsubs[compdat]
+  
+  ## forecasts nonnegative and monotonic across quantiles
+  valids <- apply(fcasts, 1, function(x) all(diff(as.numeric(x[paste0("X", 1:5)])) >= 0)) &
+    apply(fcasts, 1, function(x) all(as.numeric(x[paste0("X", 1:5)]) > 0))
+  gtruth <- with(fcasts, tapply(resolution, item, head, 1))
+  omag <- 10^floor(log(gtruth, base = 10))
+
+  ## full aggregation + score
+  fullagg <- exp(apply(fcasts[valids, paste0('X', 1:5)], 2, function(x) tapply(log(x), fcasts$item[valids], mean, na.rm = TRUE)))
+  ssc <- sscore(c(.05, .25, .5, .75, .95), apply(fullagg, 2, function(x) x/omag), gtruth/omag)
+
+  ## select pctkeep at each step of adaptive test
+  nkeep <- round(pctkeep * length(subids))
+
+  selscs <- intwidth <- matrix(NA, 18, nrow(ssc))
+  aggnow <- vector("list", 18)
+  for (i in 1:18) {
+    scoresnow <- sapply(adapt_test, function(x) x$score[i])
+  
+    keepnow <- tail((1:146)[order(scoresnow)], nkeep)
+
+    tmpdat <- fcasts[fcasts$subject_id %in% subids[keepnow],]
+    valids <- apply(tmpdat, 1, function(x) all(diff(as.numeric(x[paste0("X", 1:5)])) >= 0)) &
+      apply(tmpdat, 1, function(x) all(as.numeric(x[paste0("X", 1:5)]) > 0))
+
+    aggnow[[i]] <- exp(apply(tmpdat[valids, paste0('X', 1:5)], 2, function(x) tapply(log(x), tmpdat$item[valids], mean, na.rm = TRUE)))
+    scnow <- sscore(c(.05, .25, .5, .75, .95), apply(aggnow[[i]], 2, function(x) x/omag), gtruth/omag)
+
+    selscs[i,] <- scnow$total_score
+    intwidth[i,] <- (aggnow[[i]][,'X5'] - aggnow[[i]][,'X1'])/gtruth
+  }
+
+  allscs <- data.frame(score = c(ssc$total_score, as.numeric(t(selscs))),
+                       width = c(log(fullagg[,'X5'] - fullagg[,'X1']), as.numeric(t(intwidth))),
+                       step = rep(0:18, each = nrow(ssc)), item = rep(1:nrow(ssc), 19))
+
+  improv <- with(allscs, tapply(score, item, function(x) x))
+  improv <- do.call("rbind", improv)
+  impdf <- data.frame(improv = as.numeric(improv), step = rep(0:18, each = nrow(improv)), item = rep(1:nrow(improv), ncol(improv)))
+
+  ## keep aggregated judgments at steps 0, 1, 18
+  aggdat <- data.frame(judgment = as.numeric(as.matrix(apply(fullagg, 2, function(x) x/omag))), quantile = c(.05, .25, .5, .75, .95),
+                       item = rep(rownames(fullagg), 5), truth = rep(gtruth/omag, 5))
+  aggdat1 <- data.frame(judgment = as.numeric(as.matrix(apply(aggnow[[1]], 2, function(x) x/omag))), quantile = c(.05, .25, .5, .75, .95),
+                        item = rep(rownames(fullagg), 5), truth = rep(gtruth/omag, 5))
+  aggdat2 <- data.frame(judgment = as.numeric(as.matrix(apply(aggnow[[18]], 2, function(x) x/omag))), quantile = c(.05, .25, .5, .75, .95),
+                        item = rep(rownames(fullagg), 5), truth = rep(gtruth/omag, 5))
+  
+  aggcomp <- rbind(aggdat, aggdat1, aggdat2)
+  aggcomp$agg <- rep(paste0("Step ", c(0, 1, 18)), each = nrow(aggdat))
+
+  list(impdf = impdf, aggcomp = aggcomp)
+}
+
+
+# function for calculating the s-score
+# the first argument is a vector with the quantiles that respondents were asked to forecast about
+# the second argument is a matrix with each column a quantile and each row a response that has a forecast for the respective quantile
+# the third argument is a vector that indicates the correct answer corresponding to each response
+sscore <- function(ps, qs, tr){
+    scrs <- matrix(NA, nrow = nrow(qs), ncol = ncol(qs))
+    for(i in 1:nrow(scrs)){
+        for(j in 1:ncol(scrs)){
+            scrs[i, j] <- ps[j] * max(tr[i] - qs[i,j], 0) + (1 - ps[j]) * max(qs[i,j] - tr[i], 0)
+        }
+    }
+    scrs <- data.frame(scrs)
+    names(scrs) <- ps
+    scrs$total_score <- rowSums(scrs[, 1:ncol(qs)])
+    return(scrs)
 }
