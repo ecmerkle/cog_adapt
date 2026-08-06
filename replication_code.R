@@ -151,8 +151,6 @@ parres$test <- rep(sclabs, length(unique(parres$parm)))
 names(parres)[2:3] <- c("lowpi", "hipi")
 parres$inint <- 1 - with(parres, hipi < 0 | lowpi > 0) 
 
-
-## ----parcomp------------------------------------------------------------------
 itcols <- 1:20
 itnames <- c("beta", "alpha", "gamma1", "gamma2", "omega")
 stdat <- cbind.data.frame(parm = rep(itnames, each = length(itcols)),
