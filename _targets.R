@@ -114,18 +114,6 @@ list(
     read_data3(data2$dat)
   ),
   tar_target(
-    fit3,
-    fit_model(data3, model_file, model_type = "beta")
-  ),
-  tar_target(
-    postmns3,
-    summ_params(fit3)
-  ),
-  tar_target(
-    summaries3,
-    summ_outputs(data3, fit3, theta_values, postmns3, model_type = "beta")
-  ),
-  tar_target(
     fit2grp,
     fit_2grp_model(data$dat, data2$dat, model_2grp)
   ),
